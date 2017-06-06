@@ -16632,6 +16632,119 @@ Object {
 }
 `;
 
+exports[`typescript fixtures/basics/type-alias-union-type-declaration.src 1`] = `
+Object {
+  "body": Array [
+    Object {
+      "id": Object {
+        "loc": Object {
+          "end": Object {
+            "column": 6,
+            "line": 1,
+          },
+          "start": Object {
+            "column": 5,
+            "line": 1,
+          },
+        },
+        "name": "T",
+        "range": Array [
+          5,
+          6,
+        ],
+        "type": "Identifier",
+      },
+      "loc": Object {
+        "end": Object {
+          "column": 23,
+          "line": 1,
+        },
+        "start": Object {
+          "column": 0,
+          "line": 1,
+        },
+      },
+      "range": Array [
+        5,
+        23,
+      ],
+      "type": "TSTypeAliasDeclaration",
+      "typeAnnotation": Object {
+        "loc": Object {
+          "end": Object {
+            "column": 22,
+            "line": 1,
+          },
+          "start": Object {
+            "column": 9,
+            "line": 1,
+          },
+        },
+        "range": Array [
+          9,
+          22,
+        ],
+        "type": "TSUnionType",
+        "types": Array [
+          Object {
+            "loc": Object {
+              "end": Object {
+                "column": 15,
+                "line": 1,
+              },
+              "start": Object {
+                "column": 9,
+                "line": 1,
+              },
+            },
+            "range": Array [
+              9,
+              15,
+            ],
+            "type": "TSNumberKeyword",
+          },
+          Object {
+            "loc": Object {
+              "end": Object {
+                "column": 22,
+                "line": 1,
+              },
+              "start": Object {
+                "column": 18,
+                "line": 1,
+              },
+            },
+            "range": Array [
+              18,
+              22,
+            ],
+            "raw": "null",
+            "type": "Literal",
+            "value": null,
+          },
+        ],
+      },
+    },
+  ],
+  "loc": Object {
+    "end": Object {
+      "column": 23,
+      "line": 1,
+    },
+    "start": Object {
+      "column": 0,
+      "line": 1,
+    },
+  },
+  "range": Array [
+    0,
+    23,
+  ],
+  "sourceType": "script",
+  "type": "Program",
+}
+`;
+
 exports[`typescript fixtures/basics/type-guard.src 1`] = `
 Object {
   "body": Array [
