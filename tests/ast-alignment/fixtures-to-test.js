@@ -86,13 +86,15 @@ let fixturePatternConfigsToTest = [
 
     createFixturePatternConfigFor("comments", {
         ignore: [
-            "export-default-anonymous-class", // needs to be parsed with `sourceType: "module"`
             /**
              * Template strings seem to also be affected by the difference in opinion between different parsers in:
              * https://github.com/babel/babylon/issues/673
              */
             "no-comment-template", // Purely AST diffs
             "template-string-block" // Purely AST diffs
+        ],
+        parseWithSourceTypeModule: [
+            "export-default-anonymous-class"
         ]
     }),
 
@@ -390,7 +392,7 @@ let fixturePatternConfigsToTest = [
             "interface-with-optional-properties",
             "interface-without-type-annotation",
             "type-alias-declaration-with-constrained-type-parameter",
-            "type-alias-declaration",
+            // "type-alias-declaration",
             "type-alias-object-without-annotation",
             "typed-this",
             "class-with-optional-properties",

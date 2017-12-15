@@ -174,6 +174,18 @@ describe("TypeScript", () => {
         );
     });
 
+    it("should allow `semi` to work on type aliases", () => {
+        verifyAndAssertMessages(
+            unpad(`
+                type foo = string
+            `),
+            {
+                semi: 2
+            },
+            ["1:18 Missing semicolon. semi"]
+        );
+    });
+
     // it("should not produce a false positive for no-restricted-globals rule (#350)", () => {
     //     verifyAndAssertMessages(
     //         unpad(`
