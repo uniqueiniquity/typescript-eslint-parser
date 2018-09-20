@@ -131,52 +131,59 @@ function generateAST(code, options, additionalParsingContext) {
         warnedAboutTSVersion = true;
     }
 
-    // Even if jsx option is set in typescript compiler, filename still has to
-    // contain .tsx file extension
-    const FILENAME = (extra.ecmaFeatures.jsx) ? "eslint.tsx" : "eslint.ts";
+    let FILENAME;
+    if (extra.parseForESLint && options.program && typeof options === "object") {
+        FILENAME = options.filePath;
+        extra.program = options.program;
+    } else {
+        // Even if jsx option is set in typescript compiler, filename still has to
+        // contain .tsx file extension
+        FILENAME = (extra.ecmaFeatures.jsx) ? "eslint.tsx" : "eslint.ts";
 
-    const compilerHost = {
-        fileExists() {
-            return true;
-        },
-        getCanonicalFileName() {
-            return FILENAME;
-        },
-        getCurrentDirectory() {
-            return "";
-        },
-        getDefaultLibFileName() {
-            return "lib.d.ts";
-        },
+        const compilerHost = {
+            fileExists() {
+                return true;
+            },
+            getCanonicalFileName() {
+                return FILENAME;
+            },
+            getCurrentDirectory() {
+                return "";
+            },
+            getDefaultLibFileName() {
+                return "lib.d.ts";
+            },
 
-        // TODO: Support Windows CRLF
-        getNewLine() {
-            return "\n";
-        },
-        getSourceFile(filename) {
-            return ts.createSourceFile(filename, code, ts.ScriptTarget.Latest, true);
-        },
-        readFile() {
-            return null;
-        },
-        useCaseSensitiveFileNames() {
-            return true;
-        },
-        writeFile() {
-            return null;
-        }
-    };
+            // TODO: Support Windows CRLF
+            getNewLine() {
+                return "\n";
+            },
+            getSourceFile(filename) {
+                return ts.createSourceFile(filename, code, ts.ScriptTarget.Latest, true);
+            },
+            readFile() {
+                return null;
+            },
+            useCaseSensitiveFileNames() {
+                return true;
+            },
+            writeFile() {
+                return null;
+            }
+        };
 
-    const program = ts.createProgram([FILENAME], {
-        noResolve: true,
-        target: ts.ScriptTarget.Latest,
-        jsx: extra.ecmaFeatures.jsx ? "preserve" : undefined
-    }, compilerHost);
+        extra.program = ts.createProgram([FILENAME], {
+            noResolve: true,
+            target: ts.ScriptTarget.Latest,
+            jsx: extra.ecmaFeatures.jsx ? "preserve" : undefined
+        }, compilerHost);
+    }
 
-    const ast = program.getSourceFile(FILENAME);
+    const ast = extra.program.getSourceFile(FILENAME);
 
     extra.code = code;
-    return convert(ast, extra);
+    const convertedAST = convert(ast, extra);
+    return extra.parseForESLint ? { ast: convertedAST, program: extra.program, esTreeNodeToTSNodeMap: convert.esTreeNodeToTSNodeMap, tsNodeToESTreeNodeMap: convert.tsNodeToESTreeNodeMap } : convertedAST;
 }
 
 //------------------------------------------------------------------------------
@@ -190,8 +197,8 @@ exports.parse = function parse(code, options) {
 };
 
 exports.parseForESLint = function parseForESLint(code, options) {
-    const ast = generateAST(code, options, { isParseForESLint: true });
-    return { ast };
+    const { ast, program, esTreeNodeToTSNodeMap, tsNodeToESTreeNodeMap } = generateAST(code, options, { isParseForESLint: true });
+    return { ast, services: { program, esTreeNodeToTSNodeMap, tsNodeToESTreeNodeMap, ts } };
 };
 
 // Deep copy.
