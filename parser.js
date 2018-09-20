@@ -11,7 +11,8 @@
 const astNodeTypes = require("./lib/ast-node-types"),
     ts = require("typescript"),
     convert = require("./lib/ast-converter"),
-    semver = require("semver");
+    semver = require("semver"),
+    calculateProjectParserOptions = require("./lib/tsconfig-parser");
 
 const SUPPORTED_TYPESCRIPT_VERSIONS = require("./package.json").devDependencies.typescript;
 const ACTIVE_TYPESCRIPT_VERSION = ts.version;
@@ -36,7 +37,8 @@ function resetExtra() {
         strict: false,
         ecmaFeatures: {},
         useJSXTextNode: false,
-        log: console.log // eslint-disable-line no-console
+        log: console.log, // eslint-disable-line no-console
+        project: false
     };
 }
 
@@ -107,6 +109,10 @@ function generateAST(code, options, additionalParsingContext) {
             extra.log = Function.prototype;
         }
 
+        if (typeof options.project === "boolean") {
+            extra.project = options.project;
+        }
+
         /**
          * Provide the context as to whether or not we are parsing for ESLint,
          * specifically
@@ -131,52 +137,61 @@ function generateAST(code, options, additionalParsingContext) {
         warnedAboutTSVersion = true;
     }
 
-    // Even if jsx option is set in typescript compiler, filename still has to
-    // contain .tsx file extension
-    const FILENAME = (extra.ecmaFeatures.jsx) ? "eslint.tsx" : "eslint.ts";
+    let FILENAME, program;
 
-    const compilerHost = {
-        fileExists() {
-            return true;
-        },
-        getCanonicalFileName() {
-            return FILENAME;
-        },
-        getCurrentDirectory() {
-            return "";
-        },
-        getDefaultLibFileName() {
-            return "lib.d.ts";
-        },
+    if (extra.project) {
+        FILENAME = options.filePath;
+        program = calculateProjectParserOptions(options);
+    }
 
-        // TODO: Support Windows CRLF
-        getNewLine() {
-            return "\n";
-        },
-        getSourceFile(filename) {
-            return ts.createSourceFile(filename, code, ts.ScriptTarget.Latest, true);
-        },
-        readFile() {
-            return null;
-        },
-        useCaseSensitiveFileNames() {
-            return true;
-        },
-        writeFile() {
-            return null;
-        }
-    };
+    if (program === undefined) {
+        // Even if jsx option is set in typescript compiler, filename still has to
+        // contain .tsx file extension
+        FILENAME = (extra.ecmaFeatures.jsx) ? "eslint.tsx" : "eslint.ts";
 
-    const program = ts.createProgram([FILENAME], {
-        noResolve: true,
-        target: ts.ScriptTarget.Latest,
-        jsx: extra.ecmaFeatures.jsx ? "preserve" : undefined
-    }, compilerHost);
+        const compilerHost = {
+            fileExists() {
+                return true;
+            },
+            getCanonicalFileName() {
+                return FILENAME;
+            },
+            getCurrentDirectory() {
+                return "";
+            },
+            getDefaultLibFileName() {
+                return "lib.d.ts";
+            },
+
+            // TODO: Support Windows CRLF
+            getNewLine() {
+                return "\n";
+            },
+            getSourceFile(filename) {
+                return ts.createSourceFile(filename, code, ts.ScriptTarget.Latest, true);
+            },
+            readFile() {
+                return null;
+            },
+            useCaseSensitiveFileNames() {
+                return true;
+            },
+            writeFile() {
+                return null;
+            }
+        };
+
+        program = ts.createProgram([FILENAME], {
+            noResolve: true,
+            target: ts.ScriptTarget.Latest,
+            jsx: extra.ecmaFeatures.jsx ? "preserve" : undefined
+        }, compilerHost);
+    }
 
     const ast = program.getSourceFile(FILENAME);
 
     extra.code = code;
-    return convert(ast, extra);
+    return { ast: convert(ast, extra), program: extra.project ? program : undefined };
 }
 
 //------------------------------------------------------------------------------
@@ -186,12 +201,12 @@ function generateAST(code, options, additionalParsingContext) {
 exports.version = require("./package.json").version;
 
 exports.parse = function parse(code, options) {
-    return generateAST(code, options, { isParseForESLint: false });
+    return generateAST(code, options, { isParseForESLint: false }).ast;
 };
 
 exports.parseForESLint = function parseForESLint(code, options) {
-    const ast = generateAST(code, options, { isParseForESLint: true });
-    return { ast };
+    const result = generateAST(code, options, { isParseForESLint: true });
+    return { ast: result.ast, services: { program: result.program, esTreeNodeToTSNodeMap: convert.esTreeNodeToTSNodeMap, tsNodeToESTreeNodeMap: convert.tsNodeToESTreeNodeMap } };
 };
 
 // Deep copy.
